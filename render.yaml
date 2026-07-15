@@ -5,7 +5,7 @@ services:
     plan: free
     region: oregon
     autoDeployTrigger: commit
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start:express
     healthCheckPath: /health
     envVars:
@@ -25,7 +25,7 @@ services:
     plan: free
     region: oregon
     autoDeployTrigger: commit
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start:hono
     healthCheckPath: /health
     envVars:

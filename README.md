@@ -70,3 +70,6 @@ npm test
 npm run typecheck
 render blueprints validate
 ```
+
+The Render build uses `npm ci --include=dev` because TypeScript compiles the
+services before production startup.
