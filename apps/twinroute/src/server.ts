@@ -19,7 +19,7 @@ const port = Number(process.env.PORT ?? 3000);
 const repositoryUrl = process.env.REPOSITORY_URL
   || (process.env.RENDER_GIT_REPO_SLUG ? `https://github.com/${process.env.RENDER_GIT_REPO_SLUG}` : '');
 const config: ServiceConfig = {
-  region: process.env.APP_REGION ?? 'local',
+  region: process.env.APP_REGION ?? (process.env.RENDER ? 'Render' : 'local'),
   serviceName: process.env.RENDER_SERVICE_NAME ?? 'twinroute',
   repositoryUrl,
   deployUrl: repositoryUrl
