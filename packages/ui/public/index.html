@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Run the same URL inspection through Express and Hono. Compare the code, not benchmark theater." />
+    <title>TwinRoute — Express vs Hono</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" type="module"></script>
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="TwinRoute home">
+        <span class="brand-mark">F/L</span>
+        <span>TwinRoute</span>
+      </a>
+      <button class="health" id="healthButton" type="button" aria-expanded="false" aria-controls="deployPopover">
+        <span class="health-dot" aria-hidden="true"></span>
+        <span>Running on Render</span>
+      </button>
+      <div class="deploy-popover" id="deployPopover" hidden>
+        <strong>Two services. One Blueprint.</strong>
+        <span id="serviceIdentity">Checking this service…</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">Express vs Hono</p>
+        <h1 id="page-title">URL Inspector</h1>
+        <p class="lede">Enter a public URL. Compare the response and framework code side by side.</p>
+
+        <form class="inspector" id="inspectForm">
+          <label for="urlInput">Public URL</label>
+          <div class="input-row">
+            <input id="urlInput" name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" value="https://example.com" placeholder="https://your-site.com" maxlength="2048" required />
+            <button class="primary-button" id="inspectButton" type="submit">
+              <span>Inspect URL</span>
+              <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+
+          <fieldset class="mode-fieldset">
+            <legend>Run with</legend>
+            <div class="segmented" id="modeControl">
+              <label><input type="radio" name="mode" value="express" /><span><i class="framework-dot express-dot"></i>Express</span></label>
+              <label><input type="radio" name="mode" value="compare" checked /><span>Compare both</span></label>
+              <label><input type="radio" name="mode" value="hono" /><span><i class="framework-dot hono-dot"></i>Hono</span></label>
+            </div>
+          </fieldset>
+
+          <div class="examples" aria-label="Example URLs">
+            <span>Try</span>
+            <button type="button" data-example="https://example.com">example.com</button>
+            <button type="button" data-example="https://render.com">render.com</button>
+            <button type="button" data-example="https://hono.dev">hono.dev</button>
+          </div>
+          <p class="safety-note" id="safetyNote"><span aria-hidden="true">◉</span> Public HTTP and HTTPS destinations only. Private networks are blocked.</p>
+          <p class="form-error" id="formError" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section class="loading-panel" id="loadingPanel" hidden aria-live="polite">
+        <div class="loading-head"><span>Inspection in progress</span><span id="loadingStep">Validating destination</span></div>
+        <div class="loading-line"><span></span></div>
+      </section>
+
+      <section class="result-section" id="resultSection" hidden aria-labelledby="resultTitle">
+        <div class="result-heading">
+          <div>
+            <p class="eyebrow">Inspection complete</p>
+            <h2 id="resultTitle">Inspection result</h2>
+          </div>
+          <div class="result-actions">
+            <button class="text-button" id="copyButton" type="button">Copy JSON</button>
+            <a class="text-button" id="sourceButton" href="#" target="_blank" rel="noreferrer">View source ↗</a>
+          </div>
+        </div>
+
+        <div class="service-results" id="serviceResults"></div>
+
+        <nav class="tabs" aria-label="Inspection report">
+          <button type="button" role="tab" aria-selected="true" data-tab="overview">Overview</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="headers">Headers</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="difference">How they differ</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="json">Raw JSON</button>
+        </nav>
+
+        <div class="tab-panel" id="overviewPanel" role="tabpanel"></div>
+        <div class="tab-panel" id="headersPanel" role="tabpanel" hidden></div>
+        <div class="tab-panel" id="differencePanel" role="tabpanel" hidden>
+          <div class="difference-intro">
+            <p class="eyebrow">Request handling</p>
+            <h3>Express passes the error.<br />Hono returns the response.</h3>
+            <p>The DNS checks, redirects, parsing, and response contract are shared. The framework code only receives, validates, and returns the request.</p>
+          </div>
+          <div class="code-comparison">
+            <article>
+              <div class="code-title"><span><i class="framework-dot express-dot"></i>Express</span><span>server.ts</span></div>
+              <pre><code><span class="muted">app.</span>post(<span class="string">'/api/inspect'</span>,
+  <span class="keyword">async</span> (req, res, next) =&gt; {
+    <span class="keyword">try</span> {
+      <span class="keyword">const</span> input = schema.parse(req.body)
+      <span class="keyword">const</span> result = <span class="keyword">await</span> inspectUrl(
+        input.url, <span class="string">'express'</span>
+      )
+      res.status(statusFor(result)).json(result)
+    } <span class="keyword">catch</span> (error) {
+      next(error)
+    }
+  }
+)</code></pre>
+              <ul><li>Node request and response objects</li><li>Middleware order is explicit</li><li>Errors move through <code>next</code></li></ul>
+            </article>
+            <article>
+              <div class="code-title"><span><i class="framework-dot hono-dot"></i>Hono</span><span>server.ts</span></div>
+              <pre><code><span class="muted">app.</span>post(
+  <span class="string">'/api/inspect'</span>,
+  zValidator(<span class="string">'json'</span>, schema),
+  <span class="keyword">async</span> (c) =&gt; {
+    <span class="keyword">const</span> input = c.req.valid(<span class="string">'json'</span>)
+    <span class="keyword">const</span> result = <span class="keyword">await</span> inspectUrl(
+      input.url, <span class="string">'hono'</span>
+    )
+    <span class="keyword">return</span> c.json(result, statusFor(result))
+  }
+)</code></pre>
+              <ul><li>Web-standard request model</li><li>Validated input is inferred</li><li>Handlers return a response</li></ul>
+            </article>
+          </div>
+          <div class="shared-core"><span>Shared on purpose</span><p>DNS safety · redirect policy · fetch limits · metadata parsing · response types · tests · this exact frontend</p></div>
+        </div>
+        <div class="tab-panel" id="jsonPanel" role="tabpanel" hidden><pre class="json-output"><code id="jsonOutput"></code></pre></div>
+
+        <aside class="render-cta" id="renderCta">
+          <div class="blueprint-icon" aria-hidden="true"><span>E</span><i></i><span>H</span></div>
+          <div>
+            <p class="eyebrow">Take the lab home</p>
+            <h3>Deploy both services from one Blueprint.</h3>
+            <p>One repository, two free Render web services, and the same testable comparison.</p>
+          </div>
+          <a class="deploy-button" id="deployButton" href="#" target="_blank" rel="noreferrer">Deploy both on Render <span aria-hidden="true">↗</span></a>
+        </aside>
+      </section>
+
+      <section class="method">
+        <p class="eyebrow">How the comparison stays fair</p>
+        <div class="method-grid">
+          <ol>
+            <li><span>01</span><div><strong>Same input</strong><p>Both services inspect the exact URL you provide.</p></div></li>
+            <li><span>02</span><div><strong>Same core</strong><p>Network safety and document parsing cannot favor a framework.</p></div></li>
+            <li><span>03</span><div><strong>Same deployment</strong><p>Both run on Render with matching plans and regions.</p></div></li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <footer><span>TwinRoute</span><span>Built to make a decision, not start a feud.</span></footer>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

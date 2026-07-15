@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/contract" },
+    { "path": "./packages/inspector-core" },
+    { "path": "./packages/ui" },
+    { "path": "./apps/express" },
+    { "path": "./apps/hono" }
+  ]
+}

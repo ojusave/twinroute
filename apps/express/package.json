@@ -1,0 +1,24 @@
+{
+  "name": "@inspector/express",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "PORT=3001 PEER_API_URL=http://localhost:3002 tsx watch src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@inspector/contract": "*",
+    "@inspector/core": "*",
+    "@inspector/ui": "*",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.5.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.6",
+    "tsx": "^4.20.3"
+  }
+}
