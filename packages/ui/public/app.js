@@ -279,6 +279,7 @@ copyButton.addEventListener('click', async () => {
 
 sourceButton.addEventListener('click', () => emit('github_clicked'));
 deployButton.addEventListener('click', () => emit('blueprint_deploy_clicked'));
+document.querySelector('#renderSignupLink').addEventListener('click', () => emit('render_signup_clicked'));
 
 emit('demo_viewed');
 loadConfig();

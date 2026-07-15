@@ -143,6 +143,7 @@ main { overflow: hidden; }
 .method strong { font-size: 14px; }
 .method li p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 footer { display: flex; justify-content: space-between; gap: 20px; padding: 25px clamp(22px, 5vw, 72px); background: var(--ink); color: #95978d; font: 10px var(--mono); }
+footer a { color: var(--paper); text-underline-offset: 4px; }
 .toast { position: fixed; left: 50%; bottom: 25px; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 12px 17px; z-index: 30; font: 11px var(--mono); box-shadow: 0 8px 25px rgba(0,0,0,.25); }
 
 @media (max-width: 760px) {
