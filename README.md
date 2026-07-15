@@ -19,8 +19,6 @@ Express uses `req`, `res`, `next`, explicit `schema.parse`, and error middleware
 
 ![Architecture diagram](static/images/architecture-diagram.png)
 
-![Pipeline flow](static/images/pipeline-flow.png)
-
 ## Usage
 
 1. Open the deployed app (or `http://localhost:3000` after a local start).
