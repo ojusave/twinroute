@@ -12,11 +12,9 @@
     "node": "24.x"
   },
   "scripts": {
-    "build": "npm run build -w @inspector/contract && npm run build -w @inspector/core && npm run build -w @inspector/ui && npm run build -w @inspector/express && npm run build -w @inspector/hono",
-    "dev:express": "npm run dev -w @inspector/express",
-    "dev:hono": "npm run dev -w @inspector/hono",
-    "start:express": "npm run start -w @inspector/express",
-    "start:hono": "npm run start -w @inspector/hono",
+    "build": "npm run build -w @inspector/contract && npm run build -w @inspector/ui && npm run build -w @inspector/twinroute",
+    "dev": "npm run dev -w @inspector/twinroute",
+    "start": "npm run start -w @inspector/twinroute",
     "test": "npm run build && vitest run",
     "typecheck": "tsc -b --pretty false"
   },

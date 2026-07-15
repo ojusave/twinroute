@@ -1,169 +1,131 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Run the same URL inspection through Express and Hono. Compare the code, not benchmark theater." />
-    <title>TwinRoute — Express vs Hono</title>
+    <meta name="description" content="Send one webhook through Express and Hono. Compare validation, middleware, errors, and responses side by side." />
+    <title>TwinRoute — Express vs Hono Request Lab</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/app.js" type="module"></script>
   </head>
   <body>
-    <div class="noise" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="brand" href="/" aria-label="TwinRoute home">
-        <span class="brand-mark">F/L</span>
-        <span>TwinRoute</span>
-      </a>
-      <button class="health" id="healthButton" type="button" aria-expanded="false" aria-controls="deployPopover">
-        <span class="health-dot" aria-hidden="true"></span>
-        <span>Running on Render</span>
-      </button>
-      <div class="deploy-popover" id="deployPopover" hidden>
-        <strong>Two services. One Blueprint.</strong>
-        <span id="serviceIdentity">Checking this service…</span>
+      <a class="brand" href="/" aria-label="TwinRoute home"><span class="brand-mark">TR</span><strong>TwinRoute</strong></a>
+      <div class="header-actions">
+        <span class="service-status"><i aria-hidden="true"></i><span id="serviceName">One app, two routes</span></span>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark theme">
+          <span aria-hidden="true" id="themeIcon">◐</span><span id="themeLabel">Dark</span>
+        </button>
       </div>
     </header>
 
     <main>
-      <section class="hero" aria-labelledby="page-title">
-        <p class="eyebrow">Express vs Hono</p>
-        <h1 id="page-title">URL Inspector</h1>
-        <p class="lede">Enter a public URL. Compare the response and framework code side by side.</p>
+      <section class="intro" aria-labelledby="pageTitle">
+        <div>
+          <p class="kicker">Express vs Hono request lab</p>
+          <h1 id="pageTitle">Send one webhook through both.</h1>
+        </div>
+        <p>Edit the JSON and run it. The two columns show how each framework parses, validates, handles errors, and returns the response.</p>
+      </section>
 
-        <form class="inspector" id="inspectForm">
-          <label for="urlInput">Public URL</label>
-          <div class="input-row">
-            <input id="urlInput" name="url" type="text" inputmode="url" autocomplete="url" spellcheck="false" value="https://example.com" placeholder="https://your-site.com" maxlength="2048" required />
-            <button class="primary-button" id="inspectButton" type="submit">
-              <span>Inspect URL</span>
-              <span aria-hidden="true">↗</span>
-            </button>
+      <section class="request-editor" aria-labelledby="requestHeading">
+        <div class="editor-heading">
+          <div><span class="step-number">01</span><h2 id="requestHeading">Webhook request</h2></div>
+          <div class="examples" aria-label="Example requests">
+            <button type="button" data-example="valid" aria-pressed="true">Valid</button>
+            <button type="button" data-example="missingField" aria-pressed="false">Missing field</button>
+            <button type="button" data-example="wrongType" aria-pressed="false">Wrong type</button>
           </div>
+        </div>
+        <label for="jsonInput">JSON body</label>
+        <textarea id="jsonInput" spellcheck="false" aria-describedby="editorHelp editorError">{
+  "event": "invoice.paid",
+  "payload": {
+    "id": "in_2048",
+    "amount": 4900,
+    "currency": "USD"
+  }
+}</textarea>
+        <div class="editor-footer">
+          <div>
+            <p id="editorHelp">Both endpoints receive these exact bytes inside the same Node service.</p>
+            <p class="editor-error" id="editorError" role="alert" hidden></p>
+          </div>
+          <button class="run-button" id="runButton" type="button"><span>Run through both</span><span aria-hidden="true">→</span></button>
+        </div>
+      </section>
 
-          <fieldset class="mode-fieldset">
-            <legend>Run with</legend>
-            <div class="segmented" id="modeControl">
-              <label><input type="radio" name="mode" value="express" /><span><i class="framework-dot express-dot"></i>Express</span></label>
-              <label><input type="radio" name="mode" value="compare" checked /><span>Compare both</span></label>
-              <label><input type="radio" name="mode" value="hono" /><span><i class="framework-dot hono-dot"></i>Hono</span></label>
+      <section class="comparison" aria-labelledby="comparisonHeading">
+        <div class="section-heading">
+          <div><span class="step-number">02</span><h2 id="comparisonHeading">Side-by-side result</h2></div>
+          <p class="comparison-summary" id="comparisonSummary" aria-live="polite">Run the request to compare both paths.</p>
+        </div>
+
+        <div class="result-grid" id="resultGrid">
+          <article class="framework-panel" data-framework="express" aria-labelledby="expressHeading">
+            <header><div><i class="framework-mark express-mark" aria-hidden="true"></i><h3 id="expressHeading">Express</h3></div><span class="status-pill" id="expressStatus">Waiting</span></header>
+            <div class="panel-section">
+              <h4>Request path</h4>
+              <ol class="trace-list" id="expressTrace"><li class="trace-empty">No request yet.</li></ol>
             </div>
-          </fieldset>
+            <div class="panel-section">
+              <h4>Response body</h4>
+              <pre class="response-code"><code id="expressResponse">{}</code></pre>
+            </div>
+            <div class="panel-section code-section">
+              <div class="code-heading"><h4>Framework code</h4><span>req · res · next</span></div>
+              <pre><code>app.post('/api/express/run', async (req, res, next) =&gt; {
+  try {
+    const input = schema.parse(req.body)
+    res.status(202).json(handle(input))
+  } catch (error) {
+    next(error)
+  }
+})</code></pre>
+            </div>
+          </article>
 
-          <div class="examples" aria-label="Example URLs">
-            <span>Try</span>
-            <button type="button" data-example="https://example.com">example.com</button>
-            <button type="button" data-example="https://render.com">render.com</button>
-            <button type="button" data-example="https://hono.dev">hono.dev</button>
-          </div>
-          <p class="safety-note" id="safetyNote"><span aria-hidden="true">◉</span> Public HTTP and HTTPS destinations only. Private networks are blocked.</p>
-          <p class="form-error" id="formError" role="alert" hidden></p>
-        </form>
-      </section>
-
-      <section class="loading-panel" id="loadingPanel" hidden aria-live="polite">
-        <div class="loading-head"><span>Inspection in progress</span><span id="loadingStep">Validating destination</span></div>
-        <div class="loading-line"><span></span></div>
-      </section>
-
-      <section class="result-section" id="resultSection" hidden aria-labelledby="resultTitle">
-        <div class="result-heading">
-          <div>
-            <p class="eyebrow">Inspection complete</p>
-            <h2 id="resultTitle">Inspection result</h2>
-          </div>
-          <div class="result-actions">
-            <button class="text-button" id="copyButton" type="button">Copy JSON</button>
-            <a class="text-button" id="sourceButton" href="#" target="_blank" rel="noreferrer">View source ↗</a>
-          </div>
-        </div>
-
-        <div class="service-results" id="serviceResults"></div>
-
-        <nav class="tabs" aria-label="Inspection report">
-          <button type="button" role="tab" aria-selected="true" data-tab="overview">Overview</button>
-          <button type="button" role="tab" aria-selected="false" data-tab="headers">Headers</button>
-          <button type="button" role="tab" aria-selected="false" data-tab="difference">How they differ</button>
-          <button type="button" role="tab" aria-selected="false" data-tab="json">Raw JSON</button>
-        </nav>
-
-        <div class="tab-panel" id="overviewPanel" role="tabpanel"></div>
-        <div class="tab-panel" id="headersPanel" role="tabpanel" hidden></div>
-        <div class="tab-panel" id="differencePanel" role="tabpanel" hidden>
-          <div class="difference-intro">
-            <p class="eyebrow">Request handling</p>
-            <h3>Express passes the error.<br />Hono returns the response.</h3>
-            <p>The DNS checks, redirects, parsing, and response contract are shared. The framework code only receives, validates, and returns the request.</p>
-          </div>
-          <div class="code-comparison">
-            <article>
-              <div class="code-title"><span><i class="framework-dot express-dot"></i>Express</span><span>server.ts</span></div>
-              <pre><code><span class="muted">app.</span>post(<span class="string">'/api/inspect'</span>,
-  <span class="keyword">async</span> (req, res, next) =&gt; {
-    <span class="keyword">try</span> {
-      <span class="keyword">const</span> input = schema.parse(req.body)
-      <span class="keyword">const</span> result = <span class="keyword">await</span> inspectUrl(
-        input.url, <span class="string">'express'</span>
-      )
-      res.status(statusFor(result)).json(result)
-    } <span class="keyword">catch</span> (error) {
-      next(error)
-    }
+          <article class="framework-panel" data-framework="hono" aria-labelledby="honoHeading">
+            <header><div><i class="framework-mark hono-mark" aria-hidden="true"></i><h3 id="honoHeading">Hono</h3></div><span class="status-pill" id="honoStatus">Waiting</span></header>
+            <div class="panel-section">
+              <h4>Request path</h4>
+              <ol class="trace-list" id="honoTrace"><li class="trace-empty">No request yet.</li></ol>
+            </div>
+            <div class="panel-section">
+              <h4>Response body</h4>
+              <pre class="response-code"><code id="honoResponse">{}</code></pre>
+            </div>
+            <div class="panel-section code-section">
+              <div class="code-heading"><h4>Framework code</h4><span>Context · return Response</span></div>
+              <pre><code>app.post('/api/hono/run', zValidator('json', schema),
+  async (c) =&gt; {
+    const input = c.req.valid('json')
+    return c.json(handle(input), 202)
   }
 )</code></pre>
-              <ul><li>Node request and response objects</li><li>Middleware order is explicit</li><li>Errors move through <code>next</code></li></ul>
-            </article>
-            <article>
-              <div class="code-title"><span><i class="framework-dot hono-dot"></i>Hono</span><span>server.ts</span></div>
-              <pre><code><span class="muted">app.</span>post(
-  <span class="string">'/api/inspect'</span>,
-  zValidator(<span class="string">'json'</span>, schema),
-  <span class="keyword">async</span> (c) =&gt; {
-    <span class="keyword">const</span> input = c.req.valid(<span class="string">'json'</span>)
-    <span class="keyword">const</span> result = <span class="keyword">await</span> inspectUrl(
-      input.url, <span class="string">'hono'</span>
-    )
-    <span class="keyword">return</span> c.json(result, statusFor(result))
-  }
-)</code></pre>
-              <ul><li>Web-standard request model</li><li>Validated input is inferred</li><li>Handlers return a response</li></ul>
-            </article>
-          </div>
-          <div class="shared-core"><span>Shared on purpose</span><p>DNS safety · redirect policy · fetch limits · metadata parsing · response types · tests · this exact frontend</p></div>
+            </div>
+          </article>
         </div>
-        <div class="tab-panel" id="jsonPanel" role="tabpanel" hidden><pre class="json-output"><code id="jsonOutput"></code></pre></div>
-
-        <aside class="render-cta" id="renderCta">
-          <div class="blueprint-icon" aria-hidden="true"><span>E</span><i></i><span>H</span></div>
-          <div>
-            <p class="eyebrow">Take the lab home</p>
-            <h3>Deploy both services from one Blueprint.</h3>
-            <p>One repository, two free Render web services, and the same testable comparison.</p>
-          </div>
-          <a class="deploy-button" id="deployButton" href="#" target="_blank" rel="noreferrer">Deploy both on Render <span aria-hidden="true">↗</span></a>
-        </aside>
       </section>
 
-      <section class="method">
-        <p class="eyebrow">How the comparison stays fair</p>
-        <div class="method-grid">
-          <ol>
-            <li><span>01</span><div><strong>Same input</strong><p>Both services inspect the exact URL you provide.</p></div></li>
-            <li><span>02</span><div><strong>Same core</strong><p>Network safety and document parsing cannot favor a framework.</p></div></li>
-            <li><span>03</span><div><strong>Same deployment</strong><p>Both run on Render with matching plans and regions.</p></div></li>
-          </ol>
+      <section class="takeaway" aria-labelledby="takeawayHeading">
+        <span class="step-number">03</span>
+        <div>
+          <h2 id="takeawayHeading">What changes at the framework boundary</h2>
+          <p>Both frameworks can return the same API contract. Express organizes the boundary around Node request objects and middleware. Hono organizes it around a typed context and web-standard responses. The webhook handler itself does not need to change.</p>
         </div>
       </section>
     </main>
 
     <footer>
-      <span>TwinRoute</span>
-      <span>Built to make a decision, not start a feud.</span>
-      <a id="renderSignupLink" href="https://render.com/register?utm_source=partner&amp;utm_medium=partnerships&amp;utm_campaign=2026_partnership_ojus" target="_blank" rel="noreferrer">Create a Render account ↗</a>
+      <div><strong>TwinRoute</strong><span id="deploymentDetail">Running on Render</span></div>
+      <div class="footer-links">
+        <a id="sourceLink" href="#" target="_blank" rel="noreferrer">Source code</a>
+        <a id="renderSignupLink" href="https://render.com/register?utm_source=partner&amp;utm_medium=partnerships&amp;utm_campaign=2026_partnership_ojus" target="_blank" rel="noreferrer">Sign up with Render</a>
+      </div>
     </footer>
-    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   </body>
 </html>

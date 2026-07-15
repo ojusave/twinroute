@@ -1,40 +1,15 @@
 services:
   - type: web
-    name: twinroute-express
+    name: twinroute
     runtime: node
     plan: free
     region: oregon
     autoDeployTrigger: commit
     buildCommand: npm ci --include=dev && npm run build
-    startCommand: npm run start:express
+    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: APP_REGION
         value: oregon
-      - key: PEER_API_URL
-        fromService:
-          name: twinroute-hono
-          type: web
-          envVarKey: RENDER_EXTERNAL_HOSTNAME
-
-  - type: web
-    name: twinroute-hono
-    runtime: node
-    plan: free
-    region: oregon
-    autoDeployTrigger: commit
-    buildCommand: npm ci --include=dev && npm run build
-    startCommand: npm run start:hono
-    healthCheckPath: /health
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: APP_REGION
-        value: oregon
-      - key: PEER_API_URL
-        fromService:
-          name: twinroute-express
-          type: web
-          envVarKey: RENDER_EXTERNAL_HOSTNAME

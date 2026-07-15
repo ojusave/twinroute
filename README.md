@@ -1,69 +1,34 @@
-# TwinRoute: Express vs Hono
+# TwinRoute
 
-TwinRoute runs the same URL inspection through Express and Hono. The two
-services share the URL-safety code, metadata parser, response contract, tests,
-and frontend. Only the framework boundary changes.
-
-This is a comparison you can use, not a hello-world benchmark.
+TwinRoute sends one webhook request through Express and Hono, then shows both
+request paths and responses side by side. It is one Node application and one
+Render service.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://dashboard.render.com/blueprint/new?repo=https://github.com/ojusave/twinroute)
 
+## What it demonstrates
+
+The Express endpoint uses `req`, `res`, `next`, explicit schema parsing, and
+error middleware. The Hono endpoint uses `Context`, validator-inferred input,
+composed middleware, and a returned `Response`.
+
+Both endpoints share the webhook schema and response contract. The native Node
+server sends `/api/express/*` to Express and `/api/hono/*` to Hono, so neither
+framework wraps the other's API route.
+
 ## Run locally
 
-Requires Node.js 22 or newer.
+Requires Node.js 24.
 
 ```bash
 npm install
 npm run build
-npm run dev:express
+npm start
 ```
 
-In a second terminal:
+Open `http://localhost:3000`.
 
-```bash
-npm run dev:hono
-```
-
-Open `http://localhost:3001` or `http://localhost:3002`. Compare mode calls the
-other local service.
-
-## What is shared
-
-- DNS and IP validation
-- Manual redirect handling
-- Time and response-size limits
-- HTML metadata extraction
-- TypeScript response contract
-- Security tests
-- The complete frontend artifact
-
-## What differs
-
-The Express adapter uses `req`, `res`, `next`, ordered middleware, explicit
-schema parsing, and an error-handling middleware. The Hono adapter uses
-`Context`, composed middleware, validator inference, and handlers that return a
-web-standard response.
-
-## Security boundary
-
-The inspector accepts public HTTP and HTTPS URLs on standard ports. It resolves
-every hostname, rejects any private or reserved answer, pins the outbound
-connection to a validated address, validates every redirect, limits redirects,
-times out slow requests, truncates large responses, and never returns a remote
-HTML body to the browser.
-
-It does not accept cookies, authorization headers, arbitrary methods, request
-bodies, private pages, or browser execution.
-
-## Deploy on Render
-
-The repository includes one `render.yaml` Blueprint that creates two free Node
-web services in the same region. Each service receives the other service's
-public Render hostname, so Compare mode also works on free instances. Render's
-`RENDER_GIT_REPO_SLUG` powers the **View source** and **Deploy both on Render**
-links without asking for another environment variable.
-
-Before making a public deployment, run:
+## Verify
 
 ```bash
 npm test
@@ -72,4 +37,16 @@ render blueprints validate
 ```
 
 The Render build uses `npm ci --include=dev` because TypeScript compiles the
-services before production startup.
+application before production startup.
+
+## API routes
+
+- `POST /api/express/run`
+- `POST /api/hono/run`
+- `GET /api/examples`
+- `GET /api/config`
+- `GET /health`
+
+## License
+
+MIT

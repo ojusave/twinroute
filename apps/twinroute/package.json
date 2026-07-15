@@ -1,23 +1,22 @@
 {
-  "name": "@inspector/express",
+  "name": "@inspector/twinroute",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "tsc -b",
-    "dev": "PORT=3001 PEER_API_URL=http://localhost:3002 tsx watch src/server.ts",
+    "dev": "PORT=3000 tsx watch src/server.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@hono/node-server": "^2.0.9",
+    "@hono/zod-validator": "^0.9.0",
     "@inspector/contract": "*",
-    "@inspector/core": "*",
     "@inspector/ui": "*",
-    "cors": "^2.8.5",
     "express": "^5.2.1",
-    "express-rate-limit": "^7.5.0"
+    "hono": "^4.12.30"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
     "tsx": "^4.20.3"
   }

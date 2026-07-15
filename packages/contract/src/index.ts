@@ -1,86 +1,62 @@
 import { z } from 'zod';
 
-export const inspectInputSchema = z.object({
-  url: z.string().trim().min(1, 'Enter a URL').max(2048, 'URL is too long'),
+export const webhookInputSchema = z.object({
+  event: z.string().trim().min(1, 'event is required'),
+  payload: z.object({
+    id: z.string().trim().min(1, 'payload.id is required'),
+    amount: z.number().nonnegative('payload.amount must be zero or greater'),
+    currency: z.string().trim().length(3, 'payload.currency must contain three letters'),
+  }),
 });
 
-export type InspectInput = z.infer<typeof inspectInputSchema>;
-
 export type Framework = 'express' | 'hono';
+export type TraceStatus = 'complete' | 'failed';
 
-export interface RedirectHop {
-  url: string;
-  status: number;
-  location: string;
+export interface TraceStep {
+  id: 'parse' | 'middleware' | 'validation' | 'handler' | 'response' | 'error';
+  label: string;
+  detail: string;
+  status: TraceStatus;
 }
 
-export interface PageMetadata {
-  title: string | null;
-  description: string | null;
-  canonical: string | null;
-  favicon: string | null;
-  language: string | null;
-  viewport: string | null;
-  openGraph: {
-    title: string | null;
-    description: string | null;
-    image: string | null;
-    url: string | null;
-  };
-  twitter: {
-    card: string | null;
-    title: string | null;
-    description: string | null;
-    image: string | null;
-  };
-}
-
-export interface InspectSuccess {
+export interface RunSuccess {
   ok: true;
   framework: Framework;
-  requestedUrl: string;
-  finalUrl: string;
-  status: number;
-  contentType: string;
-  size: number;
+  status: 202;
   durationMs: number;
-  inspectedAt: string;
-  contentHash: string;
-  truncated: boolean;
-  redirects: RedirectHop[];
-  headers: Record<string, string | null>;
-  metadata: PageMetadata;
+  trace: TraceStep[];
+  body: { accepted: true; event: string; id: string };
 }
 
-export type InspectErrorCode =
-  | 'INVALID_URL'
-  | 'BLOCKED_DESTINATION'
-  | 'TOO_MANY_REDIRECTS'
-  | 'UNSUPPORTED_CONTENT'
-  | 'TIMEOUT'
-  | 'REMOTE_FAILURE'
-  | 'INTERNAL_ERROR';
-
-export interface InspectFailure {
+export interface RunFailure {
   ok: false;
   framework: Framework;
-  code: InspectErrorCode;
-  message: string;
+  status: 400;
+  durationMs: number;
+  trace: TraceStep[];
+  body: { accepted: false; error: string };
 }
 
-export type InspectResult = InspectSuccess | InspectFailure;
+export type RunResult = RunSuccess | RunFailure;
 
 export interface ServiceConfig {
-  framework: Framework;
-  peerApiUrl: string | null;
   region: string;
   serviceName: string;
   repositoryUrl: string;
   deployUrl: string;
 }
 
-export const examples = [
-  { label: 'Example', url: 'https://example.com' },
-  { label: 'Render', url: 'https://render.com' },
-  { label: 'Hono', url: 'https://hono.dev' },
-];
+export const examples = {
+  valid: {
+    event: 'invoice.paid',
+    payload: { id: 'in_2048', amount: 4900, currency: 'USD' },
+  },
+  missingField: {
+    event: 'invoice.paid',
+    payload: { amount: 4900, currency: 'USD' },
+  },
+  wrongType: {
+    event: 'invoice.paid',
+    payload: { id: 'in_2048', amount: 'forty-nine dollars', currency: 'USD' },
+  },
+} as const;
