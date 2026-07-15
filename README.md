@@ -1,32 +1,96 @@
-# TwinRoute
+<div align="center">
 
-One webhook request, two framework boundaries: Express and Hono on the same Render web service.
+# TwinRoute on Render
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://dashboard.render.com/blueprint/new?repo=https://github.com/ojusave/twinroute)
+Deploy **TwinRoute**, a side-by-side Express vs Hono webhook request lab, on one Node web service: shared Zod contract, separate framework mounts, Request Lab UI.
 
-## Highlights
+<p>
+  <a href="https://dashboard.render.com/blueprint/new?repo=https://github.com/ojusave/twinroute">
+    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
+  </a>
+</p>
 
-- **Side-by-side request lab**: edit one JSON webhook, run it through Express and Hono, and inspect both traces and response bodies.
-- **Shared contract**: both routes use the same Zod schema and the same success/failure JSON shape from `@inspector/contract`.
-- **Separate framework mounts**: a native Node `http` server sends `/api/express/*` to Express and `/api/hono/*` to Hono, so neither framework wraps the other's API route.
-- **One Render service**: free Node web service with a Blueprint deploy, health check at `/health`, and TypeScript build in CI/deploy.
+<p>
+  <a href="https://render.com">
+    <img src="https://img.shields.io/badge/Render-Web%20Service-46e3b7?logo=render&logoColor=white" alt="Render" />
+  </a>
+  <a href="https://expressjs.com/">
+    <img src="https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white" alt="Express" />
+  </a>
+  <a href="https://hono.dev/">
+    <img src="https://img.shields.io/badge/Hono-4-E36002?logo=hono&logoColor=white" alt="Hono" />
+  </a>
+  <a href="https://nodejs.org/">
+    <img src="https://img.shields.io/badge/Node-24-339933?logo=node.js&logoColor=white" alt="Node 24" />
+  </a>
+</p>
 
-## Overview
+</div>
 
-TwinRoute is a small comparison app for people deciding how an HTTP boundary should feel in TypeScript. The successful request is intentionally boring: accept an `invoice.paid` webhook and return HTTP 202. What changes is how each framework parses JSON, validates input, runs middleware, and produces errors.
+![TwinRoute](./assets/hero.png)
 
-Express uses `req`, `res`, `next`, explicit `schema.parse`, and error middleware. Hono uses a typed `Context`, `zValidator`-inferred input, composed middleware, and a returned `Response`. The business result can match; the control flow does not have to.
+## What This Template Shows
 
-![Architecture diagram](static/images/architecture-diagram.png)
+This repo is a one-click Render Blueprint for comparing HTTP boundaries in TypeScript. One webhook body runs through Express and Hono in the same Node process; the UI shows both traces and response bodies.
 
-## Usage
+| Piece | Role |
+| --- | --- |
+| **[TwinRoute](https://github.com/ojusave/twinroute)** | Request Lab UI plus dual `/run` API routes |
+| **[Render Web Service](https://render.com/docs/web-services)** | Native Node 24 service: build TypeScript, serve UI and APIs |
+| **[Express 5](https://expressjs.com/)** | `/api/express/*`: `req`, `res`, `next`, error middleware |
+| **[Hono](https://hono.dev/)** | `/api/hono/*`: typed `Context`, `zValidator`, returned `Response` |
+| **`@inspector/contract`** | Shared Zod schema, examples, and success/failure types |
 
-1. Open the deployed app (or `http://localhost:3000` after a local start).
-2. Pick an example: Valid, Missing field, or Wrong type.
-3. Click **Run through both**.
-4. Compare the Express and Hono panels: request path, response body, and the route-shaped code snippet under each column.
+No database, disk, or third-party API keys. The successful path accepts an `invoice.paid` webhook and returns HTTP 202; invalid bodies return HTTP 400 on both sides with different framework error paths.
 
-Valid body:
+## Architecture
+
+```mermaid
+flowchart LR
+  browser["Browser<br/>Request Lab UI"] -->|POST| node["Native Node HTTP"]
+  node -->|"/api/express/*"| express["Express"]
+  node -->|"/api/hono/*"| hono["Hono"]
+  express --> contract["packages/contract"]
+  hono --> contract
+```
+
+### How It Works
+
+1. Click **Deploy to Render**. Render applies [`render.yaml`](./render.yaml) from this repo.
+2. Render runs `npm ci --include=dev && npm run build`, then `npm start` on the `twinroute` web service.
+3. Open the public URL. Edit the webhook JSON (or pick Valid / Missing field / Wrong type) and click **Run through both**.
+4. Compare the Express and Hono panels: request path, response body, and the route-shaped snippet under each column.
+
+| Resource | Type | Plan | Notes |
+| --- | --- | --- | --- |
+| `twinroute` | Web (`runtime: node`) | **free** | Health check `/health`; TypeScript compiles at build time |
+
+Default region: **oregon**. No database or disk: request/response traces are computed per request and returned to the browser.
+
+A native Node `http` server sends `/api/hono/*` to Hono and everything else to Express, so neither framework wraps the other's API route.
+
+## Quick Start
+
+### Prerequisites
+
+- A [Render account](https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
+
+### Deploy
+
+1. Click **Deploy to Render** above.
+2. On Apply, confirm the `twinroute` web service. No secrets are required.
+3. Wait until the service is **Live** (~2–5 minutes).
+4. Open the public URL and run the Valid example, then Missing field.
+
+Health check:
+
+```bash
+curl -sS https://<your-service>.onrender.com/health
+```
+
+Expected: `{"ok":true,"app":"twinroute"}`.
+
+Valid webhook body both routes accept:
 
 ```json
 {
@@ -39,74 +103,82 @@ Valid body:
 }
 ```
 
-Both frameworks return HTTP 202 with the same accepted payload. Remove `payload.id` and both return HTTP 400: Express through error middleware, Hono through the validator hook.
-
-### API
-
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/express/run` | Run the webhook through Express |
-| `POST` | `/api/hono/run` | Run the webhook through Hono |
-| `GET` | `/api/examples` | Example JSON bodies for the UI |
-| `GET` | `/api/config` | Service name, region, deploy, and repo URLs |
+| `POST` | `/api/express/run` | Run through Express |
+| `POST` | `/api/hono/run` | Run through Hono |
+| `GET` | `/api/examples` | Example JSON for the UI |
+| `GET` | `/api/config` | Region, service name, deploy/repo URLs |
 | `GET` | `/health` | Health check |
 
-## Deploy on Render
+## Features
 
-Prerequisites: a [Render account](https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link) and Node is handled by the Blueprint.
-
-1. Click **Deploy to Render** above (or open the [Blueprint deploy link](https://dashboard.render.com/blueprint/new?repo=https://github.com/ojusave/twinroute)).
-2. Confirm the Blueprint creates the `twinroute` web service from [`render.yaml`](./render.yaml).
-3. Wait until the service is live, then open the service URL.
-4. Confirm `GET /health` returns `{"ok":true,"app":"twinroute"}`.
-
-| Resource | Type | Plan | Notes |
-| --- | --- | --- | --- |
-| `twinroute` | Web (`runtime: node`) | free | Region `oregon`; health check `/health`; build compiles TypeScript |
-
-The Render build runs `npm ci --include=dev && npm run build` so TypeScript is available at build time before `npm start`.
+| Feature | Description |
+| --- | --- |
+| **Side-by-side lab** | One JSON body, two framework traces and responses |
+| **Shared contract** | Same Zod schema and RunSuccess / RunFailure shape |
+| **Separate mounts** | Native Node dispatch; Express and Hono stay on their own prefixes |
+| **One Blueprint service** | Free Node web service, health check, TS build in deploy |
+| **Zero secrets** | No DB, Redis, or third-party keys to configure |
 
 ## Configuration
 
-| Variable | Required | Default / source | Purpose |
-| --- | --- | --- | --- |
-| `PORT` | No | `3000` locally; injected by Render | HTTP listen port; bind is `0.0.0.0` |
-| `NODE_ENV` | No | `production` in Blueprint | Affects static-asset cache headers |
-| `APP_REGION` | No | `oregon` in Blueprint; falls back to `Render` / `local` | Shown in service config metadata |
-| `RENDER_SERVICE_NAME` | Auto on Render | `twinroute` fallback | Service label for the UI |
-| `RENDER_GIT_REPO_SLUG` | Auto on Render | none | Builds the GitHub and Deploy button URLs when unset elsewhere |
-| `REPOSITORY_URL` | No | derived from `RENDER_GIT_REPO_SLUG` | Override the repo URL used by `/api/config` |
+| Variable | Source | Description |
+| --- | --- | --- |
+| `PORT` | Wired | Injected by Render; local default `3000`; bind `0.0.0.0` |
+| `NODE_ENV` | Wired | `production` in the Blueprint (static cache headers) |
+| `APP_REGION` | Wired | `oregon` in the Blueprint; shown via `/api/config` |
+| `RENDER_SERVICE_NAME` | Auto on Render | Service label in the UI (`twinroute` fallback) |
+| `RENDER_GIT_REPO_SLUG` | Auto on Render | Builds GitHub / Deploy URLs when set |
+| `REPOSITORY_URL` | Optional | Override repo URL used by `/api/config` |
 
-No database, Redis, or third-party API keys are required.
+## Cost
 
-## Project structure
+| Resource | Approx. monthly |
+| --- | ---: |
+| Web service (Free) | $0 |
+| **Total** | **$0** |
 
-```text
+Free web services spin down after inactivity. Expect a cold start on the first request after idle time. Upgrade the plan in the Dashboard if you want the lab always warm.
+
+## Troubleshooting
+
+| Problem | Solution |
+| --- | --- |
+| Health check fails / deploy stuck building | Confirm `buildCommand` includes `--include=dev` so TypeScript is installed before `npm run build`. |
+| Cold start / slow first load | Free plan spin-down. Retry after wake, or move `twinroute` to Starter. |
+| Both panels show validation errors | The body failed the shared Zod schema. Use the Valid example, or restore `payload.id`. |
+| Only one framework responds | Check the path: Express is `/api/express/run`, Hono is `/api/hono/run`. |
+| Deploy button opens wrong repo | Blueprint URL must use `repo=https://github.com/ojusave/twinroute`. |
+
+## Project Structure
+
+```
+render.yaml              Render Blueprint (Node web service)
+README.md                This file
+LICENSE                  MIT
+assets/                  README hero diagram
 apps/twinroute/          Native Node server mounting Express + Hono
-packages/contract/       Shared Zod schema, examples, and run result types
+packages/contract/       Shared Zod schema, examples, run types
 packages/ui/             Static Request Lab UI
 tests/                   Integration tests against both /run endpoints
-render.yaml              Render Blueprint
 ```
 
-## Local development
+## Learn More
 
-Requires Node.js 24.
+**Render:**
+- [Web Services](https://render.com/docs/web-services)
+- [Blueprints](https://render.com/docs/infrastructure-as-code)
+- [Deploy to Render button](https://render.com/docs/deploy-to-render-button)
+- [Free plan limits](https://render.com/docs/free)
 
-```bash
-npm install
-npm run build
-npm start
-```
+**TwinRoute:**
+- [Repository](https://github.com/ojusave/twinroute)
+- [Express](https://expressjs.com/)
+- [Hono](https://hono.dev/)
 
-Optional checks:
-
-```bash
-npm test
-npm run typecheck
-render blueprints validate
-```
+Local smoke (Node 24): `npm install && npm run build && npm start`, then `npm test`.
 
 ## License
 
-MIT
+[MIT](LICENSE)
